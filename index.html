@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Agrichem Price Board — Bihar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board-bg:#173428;
+    --board-bg-dark:#0e2019;
+    --board-line: rgba(244,241,232,0.10);
+    --chalk-white:#f4f1e8;
+    --chalk-dim: rgba(244,241,232,0.55);
+    --chalk-amber:#f2c14e;
+    --chalk-amber-dim:#c9a03e;
+    --brick:#d1495b;
+    --sage:#8fae7d;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1e4433 0%, var(--board-bg) 55%),
+      var(--board-bg);
+    color:var(--chalk-white);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+    z-index:0;
+  }
+  .wrap{
+    position:relative; z-index:1;
+    max-width:600px;
+    margin:0 auto;
+    padding:20px 16px 100px;
+  }
+  header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .title-block{flex:1;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--chalk-amber-dim);
+    margin:0 0 4px;
+  }
+  h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    font-size:26px;
+    letter-spacing:0.01em;
+    margin:0;
+    color:var(--chalk-white);
+  }
+  .sync{
+    display:flex; align-items:center; gap:6px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--chalk-dim);
+    margin-top:6px;
+  }
+  .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--chalk-amber);
+    box-shadow:0 0 0 0 rgba(242,193,78,0.6);
+    animation:pulse 2.2s infinite;
+    flex-shrink:0;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(242,193,78,0.5);}
+    70%{box-shadow:0 0 0 7px rgba(242,193,78,0);}
+    100%{box-shadow:0 0 0 0 rgba(242,193,78,0);}
+  }
+  .lock-btn{
+    background:var(--board-bg-dark);
+    border:1px solid var(--board-line);
+    color:var(--chalk-white);
+    width:42px;height:42px;
+    border-radius:12px;
+    font-size:18px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    transition:border-color .15s, background .15s;
+  }
+  .lock-btn:hover{border-color:var(--chalk-amber-dim);}
+  .lock-btn.unlocked{
+    background:rgba(242,193,78,0.12);
+    border-color:var(--chalk-amber-dim);
+    color:var(--chalk-amber);
+  }
+  .search{
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1px solid var(--board-line);
+    background:var(--board-bg-dark);
+    color:var(--chalk-white);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    margin-bottom:12px;
+    outline:none;
+  }
+  .search::placeholder{color:var(--chalk-dim);}
+  .search:focus{border-color:var(--chalk-amber-dim);}
+
+  .meta-row{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--chalk-dim);
+    margin-bottom:14px;
+  }
+
+  .admin-banner{
+    display:flex; align-items:center; justify-content:space-between;
+    background:rgba(242,193,78,0.10);
+    border:1px solid rgba(242,193,78,0.3);
+    color:var(--chalk-amber);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:0.03em;
+    padding:9px 12px;
+    border-radius:10px;
+    margin-bottom:14px;
+  }
+  .admin-banner button{
+    background:none;border:none;color:var(--chalk-amber);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; text-decoration:underline;
+    cursor:pointer; padding:0;
+  }
+
+  .category{
+    margin-bottom:12px;
+    border:1px solid var(--board-line);
+    border-radius:var(--radius);
+    overflow:hidden;
+    background:rgba(0,0,0,0.08);
+  }
+  .cat-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 14px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .cat-header:hover{background:rgba(255,255,255,0.02);}
+  .cat-title{
+    font-family:'Oswald',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    color:var(--chalk-white);
+  }
+  .cat-count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--chalk-dim);
+    margin-left:8px;
+  }
+  .cat-chevron{
+    font-size:12px; color:var(--chalk-dim);
+    transition:transform .15s;
+  }
+  .cat-header.open .cat-chevron{transform:rotate(90deg);}
+  .cat-body{display:none;}
+  .cat-body.open{display:block;}
+
+  .row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 14px;
+    border-top:1px solid var(--board-line);
+  }
+  .row-main{flex:1; min-width:0;}
+  .p-name{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--chalk-white);
+    display:flex; align-items:center; gap:6px;
+    flex-wrap:wrap;
+  }
+  .p-ai{
+    font-size:11px;
+    color:var(--chalk-dim);
+    margin-top:2px;
+    line-height:1.3;
+  }
+  .p-pack{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--chalk-amber-dim);
+    margin-top:3px;
+  }
+  .badge-updated{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    letter-spacing:0.05em;
+    background:rgba(209,73,91,0.18);
+    color:var(--brick);
+    border:1px solid rgba(209,73,91,0.4);
+    padding:2px 6px;
+    border-radius:5px;
+    text-transform:uppercase;
+  }
+  .p-price-block{
+    text-align:right;
+    flex-shrink:0;
+  }
+  .p-price{
+    font-family:'Oswald',sans-serif;
+    font-size:19px;
+    font-weight:600;
+    color:var(--chalk-amber);
+    letter-spacing:0.01em;
+    white-space:nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .p-price-sub{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--chalk-dim);
+    margin-top:2px;
+  }
+  .row-actions{
+    display:flex; gap:6px; flex-shrink:0;
+  }
+  .icon-btn{
+    width:32px;height:32px;
+    border-radius:9px;
+    border:1px solid var(--board-line);
+    background:var(--board-bg-dark);
+    color:var(--chalk-dim);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:13px;
+  }
+  .icon-btn:hover{color:var(--chalk-white); border-color:var(--chalk-amber-dim);}
+  .icon-btn.danger:hover{color:var(--brick); border-color:var(--brick);}
+
+  .edit-row{padding:12px 14px; border-top:1px solid var(--board-line);}
+  .edit-row.new{border-top:none;}
+  .field-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--chalk-dim);
+    margin:0 0 4px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .field-wrap{margin-bottom:8px;}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  input.field, select.field{
+    width:100%;
+    background:var(--board-bg-dark);
+    border:1px solid var(--board-line);
+    color:var(--chalk-white);
+    border-radius:8px;
+    padding:9px 10px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    outline:none;
+  }
+  input.field:focus, select.field:focus{border-color:var(--chalk-amber-dim);}
+  .edit-actions{display:flex; gap:8px; margin-top:4px;}
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-size:13px; font-weight:600;
+    padding:9px 14px;
+    border-radius:8px;
+    border:1px solid transparent;
+    cursor:pointer;
+  }
+  .btn-save{background:var(--chalk-amber); color:#1b2a1f; flex:1;}
+  .btn-cancel{background:none; border-color:var(--board-line); color:var(--chalk-dim);}
+
+  .empty{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--chalk-dim);
+  }
+  .empty .big{font-size:36px; margin-bottom:8px;}
+  .empty p{font-size:14px; line-height:1.5; max-width:280px; margin:0 auto;}
+
+  .fab{
+    position:fixed;
+    bottom:22px; left:50%; transform:translateX(-50%);
+    background:var(--chalk-amber);
+    color:#1b2a1f;
+    border:none;
+    border-radius:14px;
+    padding:14px 22px;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    display:flex; align-items:center; gap:8px;
+    cursor:pointer;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    z-index:5;
+  }
+
+  .toast{
+    position:fixed;
+    top:16px; left:50%; transform:translateX(-50%) translateY(-140%);
+    background:var(--chalk-white);
+    color:#173428;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:10px;
+    transition:transform .25s ease;
+    z-index:20;
+    max-width:88vw;
+    text-align:center;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(10,20,15,0.7);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:30;
+  }
+  .modal{
+    background:var(--board-bg-dark);
+    border:1px solid var(--board-line);
+    border-radius:16px;
+    padding:24px;
+    width:100%; max-width:320px;
+    text-align:center;
+  }
+  .modal h2{
+    font-family:'Oswald',sans-serif;
+    font-size:18px; font-weight:600;
+    margin:0 0 6px;
+  }
+  .modal p{
+    font-size:13px; color:var(--chalk-dim); margin:0 0 18px; line-height:1.5;
+  }
+  .pin-input{
+    width:100%;
+    background:var(--board-bg);
+    border:1px solid var(--board-line);
+    color:var(--chalk-white);
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;
+    letter-spacing:0.3em;
+    text-align:center;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:14px;
+    outline:none;
+  }
+  .pin-input:focus{border-color:var(--chalk-amber-dim);}
+  .modal-actions{display:flex; gap:10px;}
+  .modal-actions .btn{flex:1;}
+  .modal-error{color:var(--brick); font-size:12px; margin:-8px 0 12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <p class="eyebrow">Agrichem &middot; Bihar &amp; Jharkhand Rate Sheet</p>
+      <h1>Price Board</h1>
+      <div class="sync"><span class="dot"></span><span id="syncText">connecting…</span></div>
+    </div>
+    <button class="lock-btn" id="lockBtn" title="Boss mode">🔒</button>
+  </header>
+
+  <div id="adminBanner" style="display:none" class="admin-banner">
+    <span>BOSS MODE — you can edit prices</span>
+    <button id="exitAdmin">exit</button>
+  </div>
+
+  <input type="text" class="search" id="search" placeholder="Search product, active ingredient, or pack size…">
+  <div class="meta-row"><span id="countText"></span><span id="updatedFilterHint"></span></div>
+
+  <div class="category" id="newProductSlot"></div>
+  <div id="board"></div>
+</div>
+
+<button class="fab" id="addFab" style="display:none">+ Add product</button>
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script>
+const RAW_SEED = [{"id":"b_0000","category":"Insecticides","name":"Kantara","ai":"Thiamethoxam 12.6% + Lambda-Cyhalothrin 9.5% ZC","pack":"1 LTR (HDPE Bottle)","price":1110.0,"unitPrice":1110.0,"priceIncl":1309.8,"gst":null,"updated":false},{"id":"b_0001","category":"Insecticides","name":"Kantara","ai":"Thiamethoxam 12.6% + Lambda-Cyhalothrin 9.5% ZC","pack":"500 ML","price":1130.0,"unitPrice":565.0,"priceIncl":1333.4,"gst":null,"updated":false},{"id":"b_0002","category":"Insecticides","name":"Kantara","ai":"Thiamethoxam 12.6% + Lambda-Cyhalothrin 9.5% ZC","pack":"250 ML","price":1145.0,"unitPrice":286.25,"priceIncl":1351.1,"gst":null,"updated":false},{"id":"b_0003","category":"Insecticides","name":"Kantara","ai":"Thiamethoxam 12.6% + Lambda-Cyhalothrin 9.5% ZC","pack":"100 ML","price":1200.0,"unitPrice":120.0,"priceIncl":1416.0,"gst":null,"updated":false},{"id":"b_0004","category":"Insecticides","name":"Py-Metro","ai":"Pymetrozine 50% WG","pack":"1 KG (HDPE Bottle)","price":1250.0,"unitPrice":1250.0,"priceIncl":1475.0,"gst":null,"updated":false},{"id":"b_0005","category":"Insecticides","name":"Py-Metro","ai":"Pymetrozine 50% WG","pack":"500 GM","price":1270.0,"unitPrice":635.0,"priceIncl":1498.6,"gst":null,"updated":false},{"id":"b_0006","category":"Insecticides","name":"Py-Metro","ai":"Pymetrozine 50% WG","pack":"250 GM","price":1285.0,"unitPrice":321.25,"priceIncl":1516.3,"gst":null,"updated":false},{"id":"b_0007","category":"Insecticides","name":"Py-Metro","ai":"Pymetrozine 50% WG","pack":"100 GM","price":1340.0,"unitPrice":134.0,"priceIncl":1581.2,"gst":null,"updated":false},{"id":"b_0008","category":"Insecticides","name":"Prithvi","ai":"Emmamactin Benzoate 5% SG","pack":"1 KG (HDPE Cont)","price":1015.0,"unitPrice":1015.0,"priceIncl":1197.7,"gst":null,"updated":false},{"id":"b_0009","category":"Insecticides","name":"Prithvi","ai":"Emmamactin Benzoate 5% SG","pack":"500 GM","price":1045.0,"unitPrice":522.5,"priceIncl":1233.1,"gst":null,"updated":false},{"id":"b_0010","category":"Insecticides","name":"Prithvi","ai":"Emmamactin Benzoate 5% SG","pack":"250 GM","price":1075.0,"unitPrice":268.75,"priceIncl":1268.5,"gst":null,"updated":false},{"id":"b_0011","category":"Insecticides","name":"Prithvi","ai":"Emmamactin Benzoate 5% SG","pack":"100 GM","price":1105.0,"unitPrice":110.5,"priceIncl":1303.9,"gst":null,"updated":false},{"id":"b_0012","category":"Insecticides","name":"Prithvi","ai":"Emmamactin Benzoate 5% SG","pack":"50 GM","price":1185.0,"unitPrice":59.25,"priceIncl":1398.3,"gst":null,"updated":false},{"id":"b_0013","category":"Insecticides","name":"Prithvi","ai":"Emmamactin Benzoate 5% SG","pack":"10 GM Carton","price":1575.0,"unitPrice":15.75,"priceIncl":1858.5,"gst":null,"updated":false},{"id":"b_0014","category":"Insecticides","name":"Rhino","ai":"Fipronil 40% + Imidacloprid 40% WG","pack":"100 GM (Pouch)","price":4550.0,"unitPrice":455.0,"priceIncl":5369.0,"gst":null,"updated":false},{"id":"b_0015","category":"Insecticides","name":"Rhino","ai":"Fipronil 40% + Imidacloprid 40% WG","pack":"10 GM","price":5550.0,"unitPrice":55.5,"priceIncl":6549.0,"gst":null,"updated":false},{"id":"b_0016","category":"Insecticides","name":"Partap","ai":"Cartap Hydrochloride 50% SP","pack":"500 GM (Pouch)","price":965.0,"unitPrice":482.5,"priceIncl":1138.7,"gst":null,"updated":false},{"id":"b_0017","category":"Insecticides","name":"Partap","ai":"Cartap Hydrochloride 50% SP","pack":"250 GM","price":1000.0,"unitPrice":250.0,"priceIncl":1180.0,"gst":null,"updated":false},{"id":"b_0018","category":"Insecticides","name":"Partap","ai":"Cartap Hydrochloride 50% SP","pack":"100 GM","price":1045.0,"unitPrice":104.5,"priceIncl":1233.1,"gst":null,"updated":false},{"id":"b_0019","category":"Insecticides","name":"Partap","ai":"Cartap Hydrochloride 50% SP","pack":"25 GM","price":1071.0,"unitPrice":26.78,"priceIncl":1263.78,"gst":null,"updated":false},{"id":"b_0020","category":"Insecticides","name":"Emtaf","ai":"Acephate 75% SP","pack":"1 KG (Pouch)","price":466.0,"unitPrice":466.0,"priceIncl":549.88,"gst":null,"updated":false},{"id":"b_0021","category":"Insecticides","name":"Emtaf","ai":"Acephate 75% SP","pack":"500 GM","price":507.0,"unitPrice":253.5,"priceIncl":598.26,"gst":null,"updated":false},{"id":"b_0022","category":"Insecticides","name":"Emtaf","ai":"Acephate 75% SP","pack":"250 GM","price":527.0,"unitPrice":131.75,"priceIncl":621.86,"gst":null,"updated":false},{"id":"b_0023","category":"Insecticides","name":"Emtaf","ai":"Acephate 75% SP","pack":"100 GM","price":572.0,"unitPrice":57.2,"priceIncl":674.96,"gst":null,"updated":false},{"id":"b_0024","category":"Insecticides","name":"Empro FS","ai":"Thiomethoxam 30% FS","pack":"1 LTR (HDPE Bottle)","price":565.0,"unitPrice":565.0,"priceIncl":666.7,"gst":null,"updated":false},{"id":"b_0025","category":"Insecticides","name":"Empro FS","ai":"Thiomethoxam 30% FS","pack":"500 ML","price":585.0,"unitPrice":292.5,"priceIncl":690.3,"gst":null,"updated":false},{"id":"b_0026","category":"Insecticides","name":"Empro FS","ai":"Thiomethoxam 30% FS","pack":"250 ML","price":600.0,"unitPrice":150.0,"priceIncl":708.0,"gst":null,"updated":false},{"id":"b_0027","category":"Insecticides","name":"Empro FS","ai":"Thiomethoxam 30% FS","pack":"100 ML","price":655.0,"unitPrice":65.5,"priceIncl":772.9,"gst":null,"updated":false},{"id":"b_0028","category":"Insecticides","name":"Empro FS","ai":"Thiomethoxam 30% FS","pack":"50 ML","price":735.0,"unitPrice":36.75,"priceIncl":867.3,"gst":null,"updated":false},{"id":"b_0029","category":"Insecticides","name":"Empro FS","ai":"Thiomethoxam 30% FS","pack":"25 ML","price":852.0,"unitPrice":21.3,"priceIncl":1005.36,"gst":null,"updated":false},{"id":"b_0030","category":"Insecticides","name":"Vision","ai":"Pyriproxyfen 10% EC","pack":"1 LTR (ALM Bottle)","price":535.0,"unitPrice":535.0,"priceIncl":631.3,"gst":null,"updated":false},{"id":"b_0031","category":"Insecticides","name":"Vision","ai":"Pyriproxyfen 10% EC","pack":"500 ML","price":555.0,"unitPrice":277.5,"priceIncl":654.9,"gst":null,"updated":false},{"id":"b_0032","category":"Insecticides","name":"Vision","ai":"Pyriproxyfen 10% EC","pack":"250 ML","price":575.0,"unitPrice":143.75,"priceIncl":678.5,"gst":null,"updated":false},{"id":"b_0033","category":"Insecticides","name":"Vision","ai":"Pyriproxyfen 10% EC","pack":"100 ML","price":630.0,"unitPrice":63.0,"priceIncl":743.4,"gst":null,"updated":false},{"id":"b_0034","category":"Insecticides","name":"Corsa","ai":"Acetamiprid 1.1% + Cypermethrin 5.5% EC","pack":"1 LTR (PET)","price":335.0,"unitPrice":335.0,"priceIncl":395.3,"gst":null,"updated":false},{"id":"b_0035","category":"Insecticides","name":"Corsa","ai":"Acetamiprid 1.1% + Cypermethrin 5.5% EC","pack":"500 ML","price":350.0,"unitPrice":175.0,"priceIncl":413.0,"gst":null,"updated":false},{"id":"b_0036","category":"Insecticides","name":"Corsa","ai":"Acetamiprid 1.1% + Cypermethrin 5.5% EC","pack":"250 ML","price":370.0,"unitPrice":92.5,"priceIncl":436.6,"gst":null,"updated":false},{"id":"b_0037","category":"Insecticides","name":"Corsa","ai":"Acetamiprid 1.1% + Cypermethrin 5.5% EC","pack":"100 ML","price":415.0,"unitPrice":41.5,"priceIncl":489.7,"gst":null,"updated":false},{"id":"b_0038","category":"Insecticides","name":"Corsa","ai":"Acetamiprid 1.1% + Cypermethrin 5.5% EC","pack":"50 ML","price":495.0,"unitPrice":24.75,"priceIncl":584.1,"gst":null,"updated":false},{"id":"b_0039","category":"Insecticides","name":"Garuda","ai":"Imidacloprid 48% FS","pack":"50 ML","price":2100.0,"unitPrice":105.0,"priceIncl":2478.0,"gst":null,"updated":false},{"id":"b_0040","category":"Insecticides","name":"Garuda","ai":"Imidacloprid 48% FS","pack":"25 ML","price":2160.0,"unitPrice":54.0,"priceIncl":2548.8,"gst":null,"updated":false},{"id":"b_0041","category":"Insecticides","name":"Impress","ai":"Imidacloprid 17.8% SL","pack":"1 LTR (HDPE Bottle)","price":576.0,"unitPrice":576.0,"priceIncl":679.68,"gst":null,"updated":false},{"id":"b_0042","category":"Insecticides","name":"Impress","ai":"Imidacloprid 17.8% SL","pack":"500 ML","price":596.0,"unitPrice":298.0,"priceIncl":703.28,"gst":null,"updated":false},{"id":"b_0043","category":"Insecticides","name":"Impress","ai":"Imidacloprid 17.8% SL","pack":"250 ML","price":611.0,"unitPrice":152.75,"priceIncl":720.98,"gst":null,"updated":false},{"id":"b_0044","category":"Insecticides","name":"Impress","ai":"Imidacloprid 17.8% SL","pack":"100 ML","price":666.0,"unitPrice":66.6,"priceIncl":785.88,"gst":null,"updated":false},{"id":"b_0045","category":"Insecticides","name":"Impress","ai":"Imidacloprid 17.8% SL","pack":"50 ML","price":746.0,"unitPrice":37.3,"priceIncl":880.28,"gst":null,"updated":false},{"id":"b_0046","category":"Insecticides","name":"Impress","ai":"Imidacloprid 17.8% SL","pack":"10 ML","price":1276.0,"unitPrice":12.76,"priceIncl":1505.68,"gst":null,"updated":false},{"id":"b_0047","category":"Insecticides","name":"Major CS","ai":"Lambda Cyhalothrin 4.9 CS","pack":"1 LTR (PET)","price":310.0,"unitPrice":310.0,"priceIncl":365.8,"gst":null,"updated":false},{"id":"b_0048","category":"Insecticides","name":"Major CS","ai":"Lambda Cyhalothrin 4.9 CS","pack":"500 ML","price":325.0,"unitPrice":162.5,"priceIncl":383.5,"gst":null,"updated":false},{"id":"b_0049","category":"Insecticides","name":"Major CS","ai":"Lambda Cyhalothrin 4.9 CS","pack":"250 ML","price":345.0,"unitPrice":86.25,"priceIncl":407.1,"gst":null,"updated":false},{"id":"b_0050","category":"Insecticides","name":"Major CS","ai":"Lambda Cyhalothrin 4.9 CS","pack":"100 ML","price":390.0,"unitPrice":39.0,"priceIncl":460.2,"gst":null,"updated":false},{"id":"b_0051","category":"Insecticides","name":"Major CS","ai":"Lambda Cyhalothrin 4.9 CS","pack":"50 ML","price":470.0,"unitPrice":23.5,"priceIncl":554.6,"gst":null,"updated":false},{"id":"b_0052","category":"Insecticides","name":"Record","ai":"Alphamethrin 10% EC","pack":"1 LTR (PET)","price":305.0,"unitPrice":305.0,"priceIncl":359.9,"gst":null,"updated":false},{"id":"b_0053","category":"Insecticides","name":"Record","ai":"Alphamethrin 10% EC","pack":"500 ML","price":320.0,"unitPrice":160.0,"priceIncl":377.6,"gst":null,"updated":false},{"id":"b_0054","category":"Insecticides","name":"Record","ai":"Alphamethrin 10% EC","pack":"250 ML","price":340.0,"unitPrice":85.0,"priceIncl":401.2,"gst":null,"updated":false},{"id":"b_0055","category":"Insecticides","name":"Record","ai":"Alphamethrin 10% EC","pack":"100 ML","price":385.0,"unitPrice":38.5,"priceIncl":454.3,"gst":null,"updated":false},{"id":"b_0056","category":"Insecticides","name":"Record","ai":"Alphamethrin 10% EC","pack":"50 ML","price":465.0,"unitPrice":23.25,"priceIncl":548.7,"gst":null,"updated":false},{"id":"b_0057","category":"Insecticides","name":"Impress Gold","ai":"Imidacloprid 70% WDG","pack":"150 GM (HDPE Bottle)","price":1855.0,"unitPrice":328.03,"priceIncl":2188.9,"gst":null,"updated":false},{"id":"b_0058","category":"Insecticides","name":"Impress Gold","ai":"Imidacloprid 70% WDG","pack":"75 GM","price":1955.0,"unitPrice":146.99,"priceIncl":2306.9,"gst":null,"updated":false},{"id":"b_0059","category":"Insecticides","name":"Impress Gold","ai":"Imidacloprid 70% WDG","pack":"30 GM","price":2190.0,"unitPrice":65.77,"priceIncl":2584.2,"gst":null,"updated":false},{"id":"b_0060","category":"Insecticides","name":"Impress Gold","ai":"Imidacloprid 70% WDG","pack":"2 GM Carton","price":3390.0,"unitPrice":6.78,"priceIncl":4000.2,"gst":null,"updated":false},{"id":"b_0061","category":"Insecticides","name":"Impress Gold","ai":"Imidacloprid 70% WDG","pack":"2 GM Steel Drum","price":3890.0,"unitPrice":7.78,"priceIncl":4590.2,"gst":null,"updated":false},{"id":"b_0062","category":"Insecticides","name":"Bystar","ai":"Bifenthrin 10% EC","pack":"1 LTR (ALM Bottle)","price":475.0,"unitPrice":475.0,"priceIncl":560.5,"gst":null,"updated":false},{"id":"b_0063","category":"Insecticides","name":"Bystar","ai":"Bifenthrin 10% EC","pack":"500 ML","price":495.0,"unitPrice":247.5,"priceIncl":584.1,"gst":null,"updated":false},{"id":"b_0064","category":"Insecticides","name":"Bystar","ai":"Bifenthrin 10% EC","pack":"250 ML","price":515.0,"unitPrice":128.75,"priceIncl":607.7,"gst":null,"updated":false},{"id":"b_0065","category":"Insecticides","name":"Bystar","ai":"Bifenthrin 10% EC","pack":"100 ML","price":570.0,"unitPrice":57.0,"priceIncl":672.6,"gst":null,"updated":false},{"id":"b_0066","category":"Insecticides","name":"Bystar","ai":"Bifenthrin 10% EC","pack":"50 ML","price":665.0,"unitPrice":33.25,"priceIncl":784.7,"gst":null,"updated":false},{"id":"b_0067","category":"Insecticides","name":"Emprid","ai":"Acetamiprid 20% SP","pack":"1 KG (Duplex Box)","price":650.0,"unitPrice":650.0,"priceIncl":767.0,"gst":null,"updated":false},{"id":"b_0068","category":"Insecticides","name":"Emprid","ai":"Acetamiprid 20% SP","pack":"500 GM","price":665.0,"unitPrice":332.5,"priceIncl":784.7,"gst":null,"updated":false},{"id":"b_0069","category":"Insecticides","name":"Emprid","ai":"Acetamiprid 20% SP","pack":"250 GM","price":685.0,"unitPrice":171.25,"priceIncl":808.3,"gst":null,"updated":false},{"id":"b_0070","category":"Insecticides","name":"Emprid","ai":"Acetamiprid 20% SP","pack":"100 GM","price":740.0,"unitPrice":74.0,"priceIncl":873.2,"gst":null,"updated":false},{"id":"b_0071","category":"Insecticides","name":"Emprid","ai":"Acetamiprid 20% SP","pack":"20 GM x 5 x 100GM","price":930.0,"unitPrice":18.6,"priceIncl":1097.4,"gst":null,"updated":false},{"id":"b_0072","category":"Insecticides","name":"Emstar","ai":"Thimethoxam 25% WG","pack":"1 KG (HDPE Cont)","price":460.0,"unitPrice":595.0,"priceIncl":542.8,"gst":null,"updated":false},{"id":"b_0073","category":"Insecticides","name":"Emstar","ai":"Thimethoxam 25% WG","pack":"500 GM","price":490.0,"unitPrice":245.0,"priceIncl":578.2,"gst":null,"updated":false},{"id":"b_0074","category":"Insecticides","name":"Emstar","ai":"Thimethoxam 25% WG","pack":"250 GM","price":520.0,"unitPrice":130.0,"priceIncl":613.6,"gst":null,"updated":false},{"id":"b_0075","category":"Insecticides","name":"Emstar","ai":"Thimethoxam 25% WG","pack":"100 GM","price":550.0,"unitPrice":55.0,"priceIncl":649.0,"gst":null,"updated":false},{"id":"b_0076","category":"Insecticides","name":"Emstar","ai":"Thimethoxam 25% WG","pack":"5 GM","price":905.0,"unitPrice":4.53,"priceIncl":1067.9,"gst":null,"updated":false},{"id":"b_0077","category":"Insecticides","name":"Emstar","ai":"Thimethoxam 25% WG","pack":"5 GM ST JR","price":1105.0,"unitPrice":5.53,"priceIncl":1303.9,"gst":null,"updated":false},{"id":"b_0078","category":"Insecticides","name":"Chief","ai":"Chlorpyriphos 50% + Cypermethrin 5% EC","pack":"1 LTR (PET)","price":515.0,"unitPrice":515.0,"priceIncl":607.7,"gst":null,"updated":true},{"id":"b_0079","category":"Insecticides","name":"Chief","ai":"Chlorpyriphos 50% + Cypermethrin 5% EC","pack":"500 ML","price":500.0,"unitPrice":250.0,"priceIncl":590.0,"gst":null,"updated":false},{"id":"b_0080","category":"Insecticides","name":"Chief","ai":"Chlorpyriphos 50% + Cypermethrin 5% EC","pack":"250 ML","price":520.0,"unitPrice":130.0,"priceIncl":613.6,"gst":null,"updated":false},{"id":"b_0081","category":"Insecticides","name":"Chief","ai":"Chlorpyriphos 50% + Cypermethrin 5% EC","pack":"100 ML","price":565.0,"unitPrice":56.5,"priceIncl":666.7,"gst":null,"updated":false},{"id":"b_0082","category":"Insecticides","name":"Chief","ai":"Chlorpyriphos 50% + Cypermethrin 5% EC","pack":"50 ML","price":645.0,"unitPrice":32.25,"priceIncl":761.1,"gst":null,"updated":false},{"id":"b_0083","category":"Insecticides","name":"Superhit-10","ai":"Cypermethrin 10% EC","pack":"1 LTR (PET)","price":298.0,"unitPrice":298.0,"priceIncl":351.64,"gst":null,"updated":true},{"id":"b_0084","category":"Insecticides","name":"Superhit-10","ai":"Cypermethrin 10% EC","pack":"500 ML","price":250.0,"unitPrice":125.0,"priceIncl":295.0,"gst":null,"updated":false},{"id":"b_0085","category":"Insecticides","name":"Superhit-10","ai":"Cypermethrin 10% EC","pack":"250 ML","price":270.0,"unitPrice":67.5,"priceIncl":318.6,"gst":null,"updated":false},{"id":"b_0086","category":"Insecticides","name":"Superhit-10","ai":"Cypermethrin 10% EC","pack":"100 ML","price":315.0,"unitPrice":31.5,"priceIncl":371.7,"gst":null,"updated":false},{"id":"b_0087","category":"Insecticides","name":"Superhit-10","ai":"Cypermethrin 10% EC","pack":"50 ML","price":395.0,"unitPrice":19.75,"priceIncl":466.1,"gst":null,"updated":false},{"id":"b_0088","category":"Insecticides","name":"Superhit-10 (ALM Bottle)","ai":"Cypermethrin 10% EC","pack":"1 LTR (ALM Bottle)","price":265.0,"unitPrice":265.0,"priceIncl":312.7,"gst":null,"updated":false},{"id":"b_0089","category":"Insecticides","name":"Superhit-10 (ALM Bottle)","ai":"Cypermethrin 10% EC","pack":"500 ML","price":285.0,"unitPrice":142.5,"priceIncl":336.3,"gst":null,"updated":false},{"id":"b_0090","category":"Insecticides","name":"Superhit-10 (ALM Bottle)","ai":"Cypermethrin 10% EC","pack":"250 ML","price":305.0,"unitPrice":76.25,"priceIncl":359.9,"gst":null,"updated":false},{"id":"b_0091","category":"Insecticides","name":"Superhit-10 (ALM Bottle)","ai":"Cypermethrin 10% EC","pack":"100 ML","price":360.0,"unitPrice":36.0,"priceIncl":424.8,"gst":null,"updated":false},{"id":"b_0092","category":"Insecticides","name":"Superhit-10 (ALM Bottle)","ai":"Cypermethrin 10% EC","pack":"50 ML","price":455.0,"unitPrice":22.75,"priceIncl":536.9,"gst":null,"updated":false},{"id":"b_0093","category":"Insecticides","name":"Superhit Plus","ai":"Cypermethrin 25% EC","pack":"1 LTR (PET)","price":440.0,"unitPrice":440.0,"priceIncl":519.2,"gst":null,"updated":true},{"id":"b_0094","category":"Insecticides","name":"Superhit Plus","ai":"Cypermethrin 25% EC","pack":"500 ML","price":405.0,"unitPrice":202.5,"priceIncl":477.9,"gst":null,"updated":false},{"id":"b_0095","category":"Insecticides","name":"Superhit Plus","ai":"Cypermethrin 25% EC","pack":"250 ML","price":425.0,"unitPrice":106.25,"priceIncl":501.5,"gst":null,"updated":false},{"id":"b_0096","category":"Insecticides","name":"Superhit Plus","ai":"Cypermethrin 25% EC","pack":"100 ML","price":470.0,"unitPrice":47.0,"priceIncl":554.6,"gst":null,"updated":false},{"id":"b_0097","category":"Insecticides","name":"Superhit Plus","ai":"Cypermethrin 25% EC","pack":"50 ML","price":550.0,"unitPrice":27.5,"priceIncl":649.0,"gst":null,"updated":false},{"id":"b_0098","category":"Insecticides","name":"Droban","ai":"Chlorpyriphos 20% EC","pack":"1 LTR (PET)","price":240.0,"unitPrice":240.0,"priceIncl":283.2,"gst":null,"updated":false},{"id":"b_0099","category":"Insecticides","name":"Droban","ai":"Chlorpyriphos 20% EC","pack":"500 ML","price":255.0,"unitPrice":127.5,"priceIncl":300.9,"gst":null,"updated":false},{"id":"b_0100","category":"Insecticides","name":"Droban","ai":"Chlorpyriphos 20% EC","pack":"250 ML","price":275.0,"unitPrice":68.75,"priceIncl":324.5,"gst":null,"updated":false},{"id":"b_0101","category":"Insecticides","name":"Droban","ai":"Chlorpyriphos 20% EC","pack":"100 ML","price":320.0,"unitPrice":32.0,"priceIncl":377.6,"gst":null,"updated":false},{"id":"b_0102","category":"Insecticides","name":"Droban","ai":"Chlorpyriphos 20% EC","pack":"50 ML","price":400.0,"unitPrice":20.0,"priceIncl":472.0,"gst":null,"updated":false},{"id":"b_0103","category":"Insecticides","name":"Miraculate","ai":"Triacontanol 0.05% EC","pack":"1 LTR (PET)","price":225.0,"unitPrice":225.0,"priceIncl":265.5,"gst":null,"updated":false},{"id":"b_0104","category":"Insecticides","name":"Miraculate","ai":"Triacontanol 0.05% EC","pack":"500 ML","price":240.0,"unitPrice":120.0,"priceIncl":283.2,"gst":null,"updated":false},{"id":"b_0105","category":"Insecticides","name":"Miraculate","ai":"Triacontanol 0.05% EC","pack":"250 ML","price":260.0,"unitPrice":65.0,"priceIncl":306.8,"gst":null,"updated":false},{"id":"b_0106","category":"Insecticides","name":"Miraculate","ai":"Triacontanol 0.05% EC","pack":"100 ML","price":305.0,"unitPrice":30.5,"priceIncl":359.9,"gst":null,"updated":false},{"id":"b_0107","category":"Insecticides","name":"Miraculate","ai":"Triacontanol 0.05% EC","pack":"50 ML","price":385.0,"unitPrice":19.25,"priceIncl":454.3,"gst":null,"updated":false},{"id":"b_0108","category":"Insecticides","name":"Miraculate Gold","ai":"Triacontanol 0.1% EW","pack":"1 LTR (PET)","price":170.0,"unitPrice":170.0,"priceIncl":200.6,"gst":null,"updated":false},{"id":"b_0109","category":"Insecticides","name":"Miraculate Gold","ai":"Triacontanol 0.1% EW","pack":"500 ML","price":185.0,"unitPrice":92.5,"priceIncl":218.3,"gst":null,"updated":false},{"id":"b_0110","category":"Insecticides","name":"Miraculate Gold","ai":"Triacontanol 0.1% EW","pack":"250 ML","price":205.0,"unitPrice":51.25,"priceIncl":241.9,"gst":null,"updated":false},{"id":"b_0111","category":"Insecticides","name":"Miraculate Gold","ai":"Triacontanol 0.1% EW","pack":"100 ML","price":250.0,"unitPrice":25.0,"priceIncl":295.0,"gst":null,"updated":false},{"id":"b_0112","category":"Insecticides","name":"Miraculate Gold","ai":"Triacontanol 0.1% EW","pack":"50 ML","price":330.0,"unitPrice":16.5,"priceIncl":389.4,"gst":null,"updated":false},{"id":"b_0113","category":"Insecticides","name":"Promis Plus","ai":"Profenofos 40% + Cypermethrin 4% EC","pack":"1 LTR (PET)","price":490.0,"unitPrice":490.0,"priceIncl":578.2,"gst":null,"updated":false},{"id":"b_0114","category":"Insecticides","name":"Promis Plus","ai":"Profenofos 40% + Cypermethrin 4% EC","pack":"500 ML","price":505.0,"unitPrice":252.5,"priceIncl":595.9,"gst":null,"updated":false},{"id":"b_0115","category":"Insecticides","name":"Promis Plus","ai":"Profenofos 40% + Cypermethrin 4% EC","pack":"250 ML","price":525.0,"unitPrice":131.25,"priceIncl":619.5,"gst":null,"updated":false},{"id":"b_0116","category":"Insecticides","name":"Promis Plus","ai":"Profenofos 40% + Cypermethrin 4% EC","pack":"100 ML","price":570.0,"unitPrice":57.0,"priceIncl":672.6,"gst":null,"updated":false},{"id":"b_0117","category":"Insecticides","name":"Promis Plus","ai":"Profenofos 40% + Cypermethrin 4% EC","pack":"50 ML","price":650.0,"unitPrice":32.5,"priceIncl":767.0,"gst":null,"updated":false},{"id":"b_0118","category":"Insecticides","name":"Rogorich","ai":"Dimethoate 30% EC","pack":"1 LTR (PET)","price":460.0,"unitPrice":460.0,"priceIncl":542.8,"gst":null,"updated":false},{"id":"b_0119","category":"Insecticides","name":"Rogorich","ai":"Dimethoate 30% EC","pack":"500 ML","price":475.0,"unitPrice":237.5,"priceIncl":560.5,"gst":null,"updated":false},{"id":"b_0120","category":"Insecticides","name":"Rogorich","ai":"Dimethoate 30% EC","pack":"250 ML","price":495.0,"unitPrice":123.75,"priceIncl":584.1,"gst":null,"updated":false},{"id":"b_0121","category":"Insecticides","name":"Rogorich","ai":"Dimethoate 30% EC","pack":"100 ML","price":540.0,"unitPrice":54.0,"priceIncl":637.2,"gst":null,"updated":false},{"id":"b_0122","category":"Insecticides","name":"Rogorich","ai":"Dimethoate 30% EC","pack":"50 ML","price":620.0,"unitPrice":31.0,"priceIncl":731.6,"gst":null,"updated":false},{"id":"b_0123","category":"Insecticides","name":"Python","ai":"Chlorpyriphos 1.5% DP","pack":"1 KG (of 25kg pouch)","price":37.0,"unitPrice":null,"priceIncl":43.66,"gst":null,"updated":false},{"id":"b_0124","category":"Insecticides","name":"Python","ai":"Chlorpyriphos 1.5% DP","pack":"500 GM","price":40.0,"unitPrice":null,"priceIncl":47.2,"gst":null,"updated":false},{"id":"b_0125","category":"Insecticides","name":"Balwan","ai":"Chlorpyriphos 10% GR","pack":"1 KG Bag (Pouch)","price":80.0,"unitPrice":80.0,"priceIncl":94.4,"gst":null,"updated":true},{"id":"b_0126","category":"Insecticides","name":"Balwan","ai":"Chlorpyriphos 10% GR","pack":"1 KG Bucket","price":78.0,"unitPrice":78.0,"priceIncl":92.04,"gst":null,"updated":false},{"id":"b_0127","category":"Insecticides","name":"Metap","ai":"Cartap Hydrochloride 4% GR","pack":"1 KG Bag (Pouch)","price":74.0,"unitPrice":74.0,"priceIncl":87.32,"gst":null,"updated":true},{"id":"b_0128","category":"Insecticides","name":"Metap","ai":"Cartap Hydrochloride 4% GR","pack":"1 KG Bucket","price":80.0,"unitPrice":80.0,"priceIncl":94.4,"gst":null,"updated":false},{"id":"b_0129","category":"Insecticides","name":"Faulad","ai":"Carbo Furan 3% CG","pack":"1 KG Bag (Pouch)","price":62.0,"unitPrice":62.0,"priceIncl":73.16,"gst":null,"updated":true},{"id":"b_0130","category":"Insecticides","name":"Faulad","ai":"Carbo Furan 3% CG","pack":"1 KG Bucket","price":70.0,"unitPrice":70.0,"priceIncl":82.6,"gst":null,"updated":true},{"id":"b_0131","category":"Insecticides","name":"Figo GR","ai":"Fipronil 0.3% GR","pack":"1 KG Bag (Pouch)","price":39.8,"unitPrice":39.8,"priceIncl":46.96,"gst":null,"updated":true},{"id":"b_0132","category":"Insecticides","name":"Figo GR","ai":"Fipronil 0.3% GR","pack":"1 KG Bucket","price":55.0,"unitPrice":55.0,"priceIncl":64.9,"gst":null,"updated":false},{"id":"b_0133","category":"Insecticides","name":"Dhaar","ai":"Emamectin Benzoate 3.0% + Thiamethoxam 12.0% WG","pack":"250 GM (HDPE Bottle)","price":1868.8,"unitPrice":467.2,"priceIncl":2205.18,"gst":null,"updated":false},{"id":"b_0134","category":"Insecticides","name":"Dhaar","ai":"Emamectin Benzoate 3.0% + Thiamethoxam 12.0% WG","pack":"100 GM","price":1968.8,"unitPrice":196.88,"priceIncl":2323.18,"gst":null,"updated":false},{"id":"b_0135","category":"Insecticides","name":"Dhaar","ai":"Emamectin Benzoate 3.0% + Thiamethoxam 12.0% WG","pack":"50 GM","price":2118.8,"unitPrice":105.94,"priceIncl":2500.18,"gst":null,"updated":false},{"id":"b_0136","category":"Herbicides / Weedicides","name":"Army","ai":"2-4D Amine Salt 58%","pack":"1 LTR (HDPE Bottle)","price":310.0,"unitPrice":310.0,"priceIncl":365.8,"gst":null,"updated":true},{"id":"b_0137","category":"Herbicides / Weedicides","name":"Army","ai":"2-4D Amine Salt 58%","pack":"400 ML","price":265.0,"unitPrice":132.5,"priceIncl":312.7,"gst":null,"updated":false},{"id":"b_0138","category":"Herbicides / Weedicides","name":"Army","ai":"2-4D Amine Salt 58%","pack":"250 ML","price":280.0,"unitPrice":70.0,"priceIncl":330.4,"gst":null,"updated":false},{"id":"b_0139","category":"Herbicides / Weedicides","name":"Army","ai":"2-4D Amine Salt 58%","pack":"100 ML","price":335.0,"unitPrice":33.5,"priceIncl":395.3,"gst":null,"updated":false},{"id":"b_0140","category":"Herbicides / Weedicides","name":"Trump","ai":"2-4D Sodium Salt 80% WP","pack":"500 GM (Pouch)","price":320.0,"unitPrice":160.0,"priceIncl":377.6,"gst":null,"updated":true},{"id":"b_0141","category":"Herbicides / Weedicides","name":"Trump","ai":"2-4D Sodium Salt 80% WP","pack":"100 GM","price":266.0,"unitPrice":26.6,"priceIncl":313.88,"gst":null,"updated":false},{"id":"b_0142","category":"Herbicides / Weedicides","name":"Result","ai":"Attrazine 50% WP","pack":"500 GM (Pouch)","price":245.76,"unitPrice":122.88,"priceIncl":290.0,"gst":null,"updated":false},{"id":"b_0143","category":"Herbicides / Weedicides","name":"Result","ai":"Attrazine 50% WP","pack":"250 GM","price":275.76,"unitPrice":68.94,"priceIncl":325.4,"gst":null,"updated":false},{"id":"b_0144","category":"Herbicides / Weedicides","name":"Cross","ai":"Pendimethlin 30% EC","pack":"1 LTR (PET)","price":320.0,"unitPrice":320.0,"priceIncl":377.6,"gst":null,"updated":false},{"id":"b_0145","category":"Herbicides / Weedicides","name":"Cross","ai":"Pendimethlin 30% EC","pack":"500 ML","price":335.0,"unitPrice":167.5,"priceIncl":395.3,"gst":null,"updated":false},{"id":"b_0146","category":"Herbicides / Weedicides","name":"Cross","ai":"Pendimethlin 30% EC","pack":"250 ML","price":355.0,"unitPrice":88.75,"priceIncl":418.9,"gst":null,"updated":false},{"id":"b_0147","category":"Herbicides / Weedicides","name":"Cross","ai":"Pendimethlin 30% EC","pack":"100 ML","price":400.0,"unitPrice":40.0,"priceIncl":472.0,"gst":null,"updated":false},{"id":"b_0148","category":"Herbicides / Weedicides","name":"Rigid","ai":"Pretilachlor 50% EC","pack":"1 LTR (PET)","price":365.0,"unitPrice":365.0,"priceIncl":430.7,"gst":null,"updated":true},{"id":"b_0149","category":"Herbicides / Weedicides","name":"Rigid","ai":"Pretilachlor 50% EC","pack":"500 ML","price":385.0,"unitPrice":192.5,"priceIncl":454.3,"gst":null,"updated":false},{"id":"b_0150","category":"Herbicides / Weedicides","name":"Rigid","ai":"Pretilachlor 50% EC","pack":"250 ML","price":405.0,"unitPrice":101.25,"priceIncl":477.9,"gst":null,"updated":false},{"id":"b_0151","category":"Herbicides / Weedicides","name":"Rigid","ai":"Pretilachlor 50% EC","pack":"100 ML","price":450.0,"unitPrice":45.0,"priceIncl":531.0,"gst":null,"updated":false},{"id":"b_0152","category":"Herbicides / Weedicides","name":"Glow","ai":"Glyphosate 71% SG","pack":"100 GM (Pouch)","price":525.0,"unitPrice":52.5,"priceIncl":619.5,"gst":null,"updated":true},{"id":"b_0153","category":"Herbicides / Weedicides","name":"Store Up","ai":"Glyphosate 41% SL","pack":"1 LTR (HDPE Bottle)","price":280.0,"unitPrice":280.0,"priceIncl":330.4,"gst":null,"updated":false},{"id":"b_0154","category":"Herbicides / Weedicides","name":"Store Up","ai":"Glyphosate 41% SL","pack":"500 ML","price":300.0,"unitPrice":150.0,"priceIncl":354.0,"gst":null,"updated":false},{"id":"b_0155","category":"Herbicides / Weedicides","name":"Store Up","ai":"Glyphosate 41% SL","pack":"250 ML","price":315.0,"unitPrice":78.75,"priceIncl":371.7,"gst":null,"updated":false},{"id":"b_0156","category":"Herbicides / Weedicides","name":"Store Up","ai":"Glyphosate 41% SL","pack":"100 ML","price":370.0,"unitPrice":37.0,"priceIncl":436.6,"gst":null,"updated":false},{"id":"b_0157","category":"Herbicides / Weedicides","name":"Emquit","ai":"Paraquit 24% SL","pack":"1 LTR (HDPE Bottle)","price":280.0,"unitPrice":280.0,"priceIncl":330.4,"gst":null,"updated":false},{"id":"b_0158","category":"Herbicides / Weedicides","name":"Emquit","ai":"Paraquit 24% SL","pack":"500 ML","price":300.0,"unitPrice":150.0,"priceIncl":354.0,"gst":null,"updated":false},{"id":"b_0159","category":"Herbicides / Weedicides","name":"Emquit","ai":"Paraquit 24% SL","pack":"250 ML","price":315.0,"unitPrice":78.75,"priceIncl":371.7,"gst":null,"updated":false},{"id":"b_0160","category":"Herbicides / Weedicides","name":"Emquit","ai":"Paraquit 24% SL","pack":"100 ML","price":370.0,"unitPrice":37.0,"priceIncl":436.6,"gst":null,"updated":false},{"id":"b_0161","category":"Herbicides / Weedicides","name":"Protec","ai":"Clodinafop-Propargyl 15% WP","pack":"160 GM (Pouch)","price":136.0,"unitPrice":136.0,"priceIncl":160.48,"gst":null,"updated":false},{"id":"b_0162","category":"Herbicides / Weedicides","name":"Renate","ai":"Metribuzin 70% WP","pack":"100 GM (Duplex Box)","price":900.0,"unitPrice":90.0,"priceIncl":1062.0,"gst":null,"updated":false},{"id":"b_0163","category":"Herbicides / Weedicides","name":"Metro Gold","ai":"Bispyribac Sodium 10% SC","pack":"1 LTR (HDPE Bottle)","price":1025.0,"unitPrice":1025.0,"priceIncl":1209.5,"gst":null,"updated":true},{"id":"b_0164","category":"Herbicides / Weedicides","name":"Metro Gold","ai":"Bispyribac Sodium 10% SC","pack":"500 ML","price":1050.0,"unitPrice":525.0,"priceIncl":1239.0,"gst":null,"updated":true},{"id":"b_0165","category":"Herbicides / Weedicides","name":"Metro Gold","ai":"Bispyribac Sodium 10% SC","pack":"250 ML","price":1165.0,"unitPrice":291.25,"priceIncl":1374.7,"gst":null,"updated":true},{"id":"b_0166","category":"Herbicides / Weedicides","name":"Metro Gold","ai":"Bispyribac Sodium 10% SC","pack":"100 ML","price":1265.0,"unitPrice":126.5,"priceIncl":1492.7,"gst":null,"updated":true},{"id":"b_0167","category":"Herbicides / Weedicides","name":"Metro Gold","ai":"Bispyribac Sodium 10% SC","pack":"50 ML","price":1415.0,"unitPrice":70.75,"priceIncl":1669.7,"gst":null,"updated":true},{"id":"b_0168","category":"Herbicides / Weedicides","name":"Metro Gold","ai":"Bispyribac Sodium 10% SC","pack":"10 ML","price":1615.0,"unitPrice":16.15,"priceIncl":1905.7,"gst":null,"updated":true},{"id":"b_0169","category":"Herbicides / Weedicides","name":"Lauder","ai":"Tembotrione 34.4% SC","pack":"230 ML (Duplex Box)","price":985.0,"unitPrice":985.0,"priceIncl":1162.3,"gst":null,"updated":false},{"id":"b_0170","category":"Herbicides / Weedicides","name":"Lauder","ai":"Tembotrione 34.4% SC","pack":"115 ML","price":500.0,"unitPrice":500.0,"priceIncl":590.0,"gst":null,"updated":false},{"id":"b_0171","category":"Herbicides / Weedicides","name":"Lauder","ai":"Tembotrione 34.4% SC","pack":"57.5 ML","price":260.0,"unitPrice":260.0,"priceIncl":306.8,"gst":null,"updated":false},{"id":"b_0172","category":"Herbicides / Weedicides","name":"Ghezo","ai":"Pyrazosulfuron Ethyl 10% WP","pack":"80 GM (Pouch)","price":950.0,"unitPrice":76.0,"priceIncl":1121.0,"gst":null,"updated":false},{"id":"b_0173","category":"Herbicides / Weedicides","name":"Ghezo","ai":"Pyrazosulfuron Ethyl 10% WP","pack":"20 GM","price":911.0,"unitPrice":18.22,"priceIncl":1074.98,"gst":null,"updated":true},{"id":"b_0174","category":"Herbicides / Weedicides","name":"Control 5 GR","ai":"Butachlor 5% GR \u2014 TPT rate 5% extra","pack":"20 KG","price":30.5,"unitPrice":null,"priceIncl":35.99,"gst":null,"updated":false},{"id":"b_0175","category":"Herbicides / Weedicides","name":"Control 5 GR","ai":"Butachlor 5% GR \u2014 TPT rate 5% extra","pack":"5 KG","price":32.5,"unitPrice":null,"priceIncl":38.35,"gst":null,"updated":true},{"id":"b_0176","category":"Herbicides / Weedicides","name":"Control 5 GR","ai":"Butachlor 5% GR \u2014 TPT rate 5% extra","pack":"1 KG","price":33.0,"unitPrice":null,"priceIncl":38.94,"gst":null,"updated":true},{"id":"b_0177","category":"Fungicides","name":"Mfil M-45","ai":"Mancozeb 75% WP","pack":"1 KG (Pouch)","price":340.0,"unitPrice":340.0,"priceIncl":401.2,"gst":null,"updated":false},{"id":"b_0178","category":"Fungicides","name":"Mfil M-45","ai":"Mancozeb 75% WP","pack":"500 GM","price":355.0,"unitPrice":177.5,"priceIncl":418.9,"gst":null,"updated":false},{"id":"b_0179","category":"Fungicides","name":"Mfil M-45","ai":"Mancozeb 75% WP","pack":"250 GM","price":370.0,"unitPrice":92.5,"priceIncl":436.6,"gst":null,"updated":false},{"id":"b_0180","category":"Fungicides","name":"Mfil M-45","ai":"Mancozeb 75% WP","pack":"100 GM","price":390.0,"unitPrice":39.0,"priceIncl":460.2,"gst":null,"updated":false},{"id":"b_0181","category":"Fungicides","name":"Metzol Plus","ai":"Hexaconozole 5% SC","pack":"1 LTR (PET)","price":190.0,"unitPrice":190.0,"priceIncl":224.2,"gst":null,"updated":false},{"id":"b_0182","category":"Fungicides","name":"Metzol Plus","ai":"Hexaconozole 5% SC","pack":"500 ML","price":205.0,"unitPrice":102.5,"priceIncl":241.9,"gst":null,"updated":false},{"id":"b_0183","category":"Fungicides","name":"Metzol Plus","ai":"Hexaconozole 5% SC","pack":"250 ML","price":225.0,"unitPrice":56.25,"priceIncl":265.5,"gst":null,"updated":false},{"id":"b_0184","category":"Fungicides","name":"Metzol Plus","ai":"Hexaconozole 5% SC","pack":"100 ML","price":270.0,"unitPrice":27.0,"priceIncl":318.6,"gst":null,"updated":false},{"id":"b_0185","category":"Fungicides","name":"Insaf","ai":"Carbendazim 12% + Mancozeb 64%","pack":"1 KG (Duplex Box, 10kg)","price":390.0,"unitPrice":390.0,"priceIncl":460.2,"gst":null,"updated":false},{"id":"b_0186","category":"Fungicides","name":"Insaf","ai":"Carbendazim 12% + Mancozeb 64%","pack":"500 GM (Pouch 10kg)","price":400.0,"unitPrice":200.0,"priceIncl":472.0,"gst":null,"updated":false},{"id":"b_0187","category":"Fungicides","name":"Insaf","ai":"Carbendazim 12% + Mancozeb 64%","pack":"250 GM (Pouch 10kg)","price":410.0,"unitPrice":102.5,"priceIncl":483.8,"gst":null,"updated":false},{"id":"b_0188","category":"Fungicides","name":"Insaf","ai":"Carbendazim 12% + Mancozeb 64%","pack":"100 GM (Pouch 10kg)","price":435.0,"unitPrice":43.5,"priceIncl":513.3,"gst":null,"updated":false},{"id":"b_0189","category":"Fungicides","name":"Insaf","ai":"Carbendazim 12% + Mancozeb 64%","pack":"20 GM (Carton 6kg)","price":520.0,"unitPrice":10.4,"priceIncl":613.6,"gst":null,"updated":false},{"id":"b_0190","category":"Fungicides","name":"Insaf","ai":"Carbendazim 12% + Mancozeb 64%","pack":"100 GM (Bkt 8kg)","price":465.0,"unitPrice":46.5,"priceIncl":548.7,"gst":null,"updated":false},{"id":"b_0191","category":"Fungicides","name":"Insaf","ai":"Carbendazim 12% + Mancozeb 64%","pack":"20 GM (Bkt 5kg)","price":560.0,"unitPrice":11.2,"priceIncl":660.8,"gst":null,"updated":false},{"id":"b_0192","category":"Fungicides","name":"Value","ai":"Validamycin 3% L","pack":"1 LTR (HDPE Bottle)","price":260.0,"unitPrice":260.0,"priceIncl":306.8,"gst":null,"updated":false},{"id":"b_0193","category":"Fungicides","name":"Value","ai":"Validamycin 3% L","pack":"500 ML","price":280.0,"unitPrice":140.0,"priceIncl":330.4,"gst":null,"updated":false},{"id":"b_0194","category":"Fungicides","name":"Value","ai":"Validamycin 3% L","pack":"250 ML","price":295.0,"unitPrice":73.75,"priceIncl":348.1,"gst":null,"updated":false},{"id":"b_0195","category":"Fungicides","name":"Value","ai":"Validamycin 3% L","pack":"100 ML","price":350.0,"unitPrice":35.0,"priceIncl":413.0,"gst":null,"updated":false},{"id":"b_0196","category":"Fungicides","name":"Merito","ai":"Azoxystrobin 11% + Tebuconazole 18.3% SC","pack":"1 LTR (HDPE Bottle)","price":965.0,"unitPrice":965.0,"priceIncl":1138.7,"gst":null,"updated":false},{"id":"b_0197","category":"Fungicides","name":"Merito","ai":"Azoxystrobin 11% + Tebuconazole 18.3% SC","pack":"500 ML","price":985.0,"unitPrice":492.5,"priceIncl":1162.3,"gst":null,"updated":false},{"id":"b_0198","category":"Fungicides","name":"Merito","ai":"Azoxystrobin 11% + Tebuconazole 18.3% SC","pack":"250 ML","price":1000.0,"unitPrice":250.0,"priceIncl":1180.0,"gst":null,"updated":false},{"id":"b_0199","category":"Fungicides","name":"Merito","ai":"Azoxystrobin 11% + Tebuconazole 18.3% SC","pack":"100 ML","price":1055.0,"unitPrice":105.5,"priceIncl":1244.9,"gst":null,"updated":false},{"id":"b_0200","category":"Fungicides","name":"Zylo","ai":"Tricyclozole 75% WP","pack":"120 GM (Duplex Box)","price":950.0,"unitPrice":114.46,"priceIncl":1121.0,"gst":null,"updated":false},{"id":"b_0201","category":"Fungicides","name":"Metrox","ai":"Metalaxil 8% + Mancozeb 64% WP","pack":"100 GM (Duplex Box)","price":700.0,"unitPrice":70.0,"priceIncl":826.0,"gst":null,"updated":false},{"id":"b_0202","category":"Fungicides","name":"Metsul","ai":"Sulphur 80% WDG","pack":"1 KG Drum (Pouch)","price":84.75,"unitPrice":84.75,"priceIncl":100.01,"gst":null,"updated":false},{"id":"b_0203","category":"Fungicides","name":"Metsul","ai":"Sulphur 80% WDG","pack":"1 KG Bag","price":89.75,"unitPrice":89.75,"priceIncl":105.91,"gst":null,"updated":false},{"id":"b_0204","category":"Fungicides","name":"Throw","ai":"Thiophanate Methyl 70% WP","pack":"1 KG (Duplex Box)","price":535.0,"unitPrice":535.0,"priceIncl":631.3,"gst":null,"updated":false},{"id":"b_0205","category":"Fungicides","name":"Throw","ai":"Thiophanate Methyl 70% WP","pack":"500 GM","price":550.0,"unitPrice":275.0,"priceIncl":649.0,"gst":null,"updated":false},{"id":"b_0206","category":"Fungicides","name":"Throw","ai":"Thiophanate Methyl 70% WP","pack":"250 GM","price":570.0,"unitPrice":142.5,"priceIncl":672.6,"gst":null,"updated":false},{"id":"b_0207","category":"Fungicides","name":"Throw","ai":"Thiophanate Methyl 70% WP","pack":"100 GM","price":625.0,"unitPrice":62.5,"priceIncl":737.5,"gst":null,"updated":false},{"id":"b_0208","category":"Fungicides","name":"Nawab","ai":"Paclobutrazole 23% SC","pack":"1 LTR (HDPE Bottle)","price":1250.0,"unitPrice":1250.0,"priceIncl":1475.0,"gst":null,"updated":false},{"id":"b_0209","category":"Fungicides","name":"Nawab","ai":"Paclobutrazole 23% SC","pack":"500 ML","price":1270.0,"unitPrice":635.0,"priceIncl":1498.6,"gst":null,"updated":false},{"id":"b_0210","category":"Fungicides","name":"Nawab","ai":"Paclobutrazole 23% SC","pack":"250 ML","price":1285.0,"unitPrice":321.25,"priceIncl":1516.3,"gst":null,"updated":false},{"id":"b_0211","category":"Fungicides","name":"Nawab","ai":"Paclobutrazole 23% SC","pack":"100 ML","price":1340.0,"unitPrice":134.0,"priceIncl":1581.2,"gst":null,"updated":false},{"id":"b_0212","category":"Fungicides","name":"Nawab","ai":"Paclobutrazole 23% SC","pack":"50 ML","price":1420.0,"unitPrice":71.0,"priceIncl":1675.6,"gst":null,"updated":false},{"id":"b_0213","category":"Fungicides","name":"Metrobin","ai":"Azoxystrobin 18.2% + Difenoconazole 11.4% SC","pack":"1 LTR (HDPE Bottle)","price":1075.0,"unitPrice":1075.0,"priceIncl":1268.5,"gst":null,"updated":false},{"id":"b_0214","category":"Fungicides","name":"Metrobin","ai":"Azoxystrobin 18.2% + Difenoconazole 11.4% SC","pack":"500 ML","price":1095.0,"unitPrice":547.5,"priceIncl":1292.1,"gst":null,"updated":false},{"id":"b_0215","category":"Fungicides","name":"Metrobin","ai":"Azoxystrobin 18.2% + Difenoconazole 11.4% SC","pack":"250 ML","price":1110.0,"unitPrice":277.5,"priceIncl":1309.8,"gst":null,"updated":false},{"id":"b_0216","category":"Fungicides","name":"Metrobin","ai":"Azoxystrobin 18.2% + Difenoconazole 11.4% SC","pack":"100 ML","price":1195.0,"unitPrice":119.5,"priceIncl":1410.1,"gst":null,"updated":false},{"id":"b_0217","category":"Fungicides","name":"Monozo","ai":"Tebuconazole 10% + Sulphur 35% WG","pack":"1 KG (HDPE Jar)","price":380.0,"unitPrice":380.0,"priceIncl":448.4,"gst":null,"updated":false},{"id":"b_0218","category":"Fungicides","name":"Monozo","ai":"Tebuconazole 10% + Sulphur 35% WG","pack":"500 GM","price":400.0,"unitPrice":200.0,"priceIncl":472.0,"gst":null,"updated":false},{"id":"b_0219","category":"Plant Stimulant Products","name":"Metro Boom","ai":"Nitro Benzene 20% W/W","pack":"1 LTR (HDPE Bottle)","price":289.0,"unitPrice":289.0,"priceIncl":341.02,"gst":null,"updated":false},{"id":"b_0220","category":"Plant Stimulant Products","name":"Metro Boom","ai":"Nitro Benzene 20% W/W","pack":"500 ML","price":309.0,"unitPrice":154.5,"priceIncl":364.62,"gst":null,"updated":false},{"id":"b_0221","category":"Plant Stimulant Products","name":"Metro Boom","ai":"Nitro Benzene 20% W/W","pack":"250 ML","price":324.0,"unitPrice":81.0,"priceIncl":382.32,"gst":null,"updated":false},{"id":"b_0222","category":"Plant Stimulant Products","name":"Metro Boom","ai":"Nitro Benzene 20% W/W","pack":"100 ML","price":379.0,"unitPrice":37.9,"priceIncl":447.22,"gst":null,"updated":false},{"id":"b_0223","category":"Plant Stimulant Products","name":"Cure-G","ai":null,"pack":"1 KG (Pouch)","price":80.5,"unitPrice":80.5,"priceIncl":94.99,"gst":null,"updated":true},{"id":"b_0224","category":"Plant Stimulant Products","name":"Zebra Gold","ai":null,"pack":"1 LTR","price":710.0,"unitPrice":710.0,"priceIncl":837.8,"gst":null,"updated":false},{"id":"b_0225","category":"Plant Stimulant Products","name":"Zebra Gold","ai":null,"pack":"500 ML","price":730.0,"unitPrice":365.0,"priceIncl":861.4,"gst":null,"updated":false},{"id":"b_0226","category":"Plant Stimulant Products","name":"Zebra Gold","ai":null,"pack":"250 ML","price":745.0,"unitPrice":186.25,"priceIncl":879.1,"gst":null,"updated":false},{"id":"b_0227","category":"Plant Stimulant Products","name":"Zebra Gold","ai":null,"pack":"100 ML","price":800.0,"unitPrice":80.0,"priceIncl":944.0,"gst":null,"updated":false},{"id":"b_0228","category":"Plant Stimulant Products","name":"Zebra Gold","ai":null,"pack":"50 ML","price":880.0,"unitPrice":44.0,"priceIncl":1038.4,"gst":null,"updated":false},{"id":"b_0229","category":"Plant Stimulant Products","name":"Florus Gold","ai":null,"pack":"1 KG","price":877.0,"unitPrice":877.0,"priceIncl":1034.86,"gst":null,"updated":false},{"id":"b_0230","category":"Plant Stimulant Products","name":"Florus Gold","ai":null,"pack":"500 GM","price":897.0,"unitPrice":448.5,"priceIncl":1058.46,"gst":null,"updated":false},{"id":"b_0231","category":"Plant Stimulant Products","name":"Florus Gold","ai":null,"pack":"250 GM","price":912.0,"unitPrice":228.0,"priceIncl":1076.16,"gst":null,"updated":false},{"id":"b_0232","category":"Plant Stimulant Products","name":"Florus Gold","ai":null,"pack":"100 GM","price":967.0,"unitPrice":96.7,"priceIncl":1141.06,"gst":null,"updated":false},{"id":"b_0233","category":"Plant Stimulant Products","name":"Florus Gold","ai":null,"pack":"50 GM","price":1047.0,"unitPrice":52.35,"priceIncl":1235.46,"gst":null,"updated":false},{"id":"b_0234","category":"Plant Stimulant Products","name":"Kongo","ai":"Humic Potash Fulvic","pack":"1 LTR (HDPE Bottle)","price":1500.0,"unitPrice":1500.0,"priceIncl":1770.0,"gst":null,"updated":false},{"id":"b_0235","category":"Plant Stimulant Products","name":"Kongo","ai":"Humic Potash Fulvic","pack":"500 ML","price":1520.0,"unitPrice":760.0,"priceIncl":1793.6,"gst":null,"updated":false},{"id":"b_0236","category":"Plant Stimulant Products","name":"Kongo","ai":"Humic Potash Fulvic","pack":"250 ML","price":1535.0,"unitPrice":383.75,"priceIncl":1811.3,"gst":null,"updated":false},{"id":"b_0237","category":"Plant Stimulant Products","name":"Kongo","ai":"Humic Potash Fulvic","pack":"100 ML","price":1590.0,"unitPrice":159.0,"priceIncl":1876.2,"gst":null,"updated":false},{"id":"b_0238","category":"Plant Stimulant Products","name":"Florus","ai":null,"pack":"1 KG (Pouch)","price":385.0,"unitPrice":385.0,"priceIncl":454.3,"gst":null,"updated":false},{"id":"b_0239","category":"Plant Stimulant Products","name":"Florus","ai":null,"pack":"500 GM","price":400.0,"unitPrice":200.0,"priceIncl":472.0,"gst":null,"updated":false},{"id":"b_0240","category":"Plant Stimulant Products","name":"Florus","ai":null,"pack":"250 GM","price":415.0,"unitPrice":103.75,"priceIncl":489.7,"gst":null,"updated":false},{"id":"b_0241","category":"Plant Stimulant Products","name":"Florus","ai":null,"pack":"100 GM","price":435.0,"unitPrice":43.5,"priceIncl":513.3,"gst":null,"updated":false},{"id":"b_0242","category":"Plant Stimulant Products","name":"Florus","ai":null,"pack":"10 GM","price":575.0,"unitPrice":5.75,"priceIncl":678.5,"gst":null,"updated":false},{"id":"b_0243","category":"Plant Stimulant Products","name":"Zebra Super","ai":"Gibreilic and Nutrient Based Product","pack":"1 LTR (HDPE Bottle)","price":360.0,"unitPrice":360.0,"priceIncl":424.8,"gst":null,"updated":false},{"id":"b_0244","category":"Plant Stimulant Products","name":"Zebra Super","ai":"Gibreilic and Nutrient Based Product","pack":"500 ML","price":380.0,"unitPrice":190.0,"priceIncl":448.4,"gst":null,"updated":false},{"id":"b_0245","category":"Plant Stimulant Products","name":"Zebra Super","ai":"Gibreilic and Nutrient Based Product","pack":"250 ML","price":395.0,"unitPrice":98.75,"priceIncl":466.1,"gst":null,"updated":false},{"id":"b_0246","category":"Plant Stimulant Products","name":"Zebra Super","ai":"Gibreilic and Nutrient Based Product","pack":"100 ML","price":450.0,"unitPrice":45.0,"priceIncl":531.0,"gst":null,"updated":false},{"id":"b_0247","category":"Plant Stimulant Products","name":"Zebra Super","ai":"Gibreilic and Nutrient Based Product","pack":"50 ML","price":530.0,"unitPrice":26.5,"priceIncl":625.4,"gst":null,"updated":false},{"id":"b_0248","category":"Plant Stimulant Products","name":"Chipak","ai":"Silicon Sticker & Spreader","pack":"1 LTR (HDPE Bottle)","price":760.0,"unitPrice":760.0,"priceIncl":896.8,"gst":null,"updated":false},{"id":"b_0249","category":"Plant Stimulant Products","name":"Chipak","ai":"Silicon Sticker & Spreader","pack":"500 ML","price":780.0,"unitPrice":390.0,"priceIncl":920.4,"gst":null,"updated":false},{"id":"b_0250","category":"Plant Stimulant Products","name":"Chipak","ai":"Silicon Sticker & Spreader","pack":"250 ML","price":795.0,"unitPrice":198.75,"priceIncl":938.1,"gst":null,"updated":false},{"id":"b_0251","category":"Plant Stimulant Products","name":"Chipak","ai":"Silicon Sticker & Spreader","pack":"100 ML","price":850.0,"unitPrice":85.0,"priceIncl":1003.0,"gst":null,"updated":false},{"id":"b_0252","category":"Plant Stimulant Products","name":"Chipak","ai":"Silicon Sticker & Spreader","pack":"50 ML","price":930.0,"unitPrice":46.5,"priceIncl":1097.4,"gst":null,"updated":false},{"id":"b_0253","category":"Plant Stimulant Products","name":"Chipak","ai":"Silicon Sticker & Spreader","pack":"25 ML","price":1120.0,"unitPrice":22.4,"priceIncl":1321.6,"gst":null,"updated":false},{"id":"b_0254","category":"Plant Stimulant Products","name":"Metro Stic","ai":"Sticker With Spreading Agent","pack":"1 LTR (HDPE Bottle)","price":135.6,"unitPrice":135.6,"priceIncl":160.01,"gst":null,"updated":false},{"id":"b_0255","category":"Plant Stimulant Products","name":"Metro Stic","ai":"Sticker With Spreading Agent","pack":"500 ML","price":155.6,"unitPrice":77.8,"priceIncl":183.61,"gst":null,"updated":false},{"id":"b_0256","category":"Plant Stimulant Products","name":"Metro Stic","ai":"Sticker With Spreading Agent","pack":"250 ML","price":170.6,"unitPrice":42.65,"priceIncl":201.31,"gst":null,"updated":false},{"id":"b_0257","category":"Plant Stimulant Products","name":"Metro Stic","ai":"Sticker With Spreading Agent","pack":"100 ML","price":225.6,"unitPrice":22.56,"priceIncl":266.21,"gst":null,"updated":false},{"id":"b_0258","category":"Plant Stimulant Products","name":"Metro Stic","ai":"Sticker With Spreading Agent","pack":"50 ML","price":305.6,"unitPrice":15.28,"priceIncl":360.61,"gst":null,"updated":false},{"id":"b_0259","category":"Plant Stimulant Products","name":"Metro NPK 19:19:19","ai":null,"pack":"1 KG (Pouch)","price":120.0,"unitPrice":120.0,"priceIncl":141.6,"gst":"5%","updated":false},{"id":"b_0260","category":"Plant Stimulant Products","name":"Tiger","ai":null,"pack":"100 ML (HDPE Bottle)","price":2375.71,"unitPrice":237.57,"priceIncl":2803.34,"gst":"5%","updated":false},{"id":"b_0261","category":"Plant Stimulant Products","name":"Tiger","ai":null,"pack":"50 ML","price":2285.71,"unitPrice":114.29,"priceIncl":2697.14,"gst":"5%","updated":false},{"id":"b_0262","category":"Plant Stimulant Products","name":"Tiger","ai":null,"pack":"25 ML","price":2476.19,"unitPrice":22.4,"priceIncl":2921.9,"gst":"5%","updated":false},{"id":"b_0263","category":"Plant Stimulant Products","name":"Gold Leaf","ai":"Organic Growth Supplement","pack":"1 LTR (HDPE Bottle)","price":315.0,"unitPrice":315.0,"priceIncl":371.7,"gst":"5%","updated":false},{"id":"b_0264","category":"Plant Stimulant Products","name":"Gold Leaf","ai":"Organic Growth Supplement","pack":"500 ML","price":335.0,"unitPrice":167.5,"priceIncl":395.3,"gst":"5%","updated":false},{"id":"b_0265","category":"Plant Stimulant Products","name":"Gold Leaf","ai":"Organic Growth Supplement","pack":"250 ML","price":350.0,"unitPrice":87.5,"priceIncl":413.0,"gst":"5%","updated":false},{"id":"b_0266","category":"Plant Stimulant Products","name":"Gold Leaf","ai":"Organic Growth Supplement","pack":"100 ML","price":405.0,"unitPrice":40.5,"priceIncl":477.9,"gst":"5%","updated":false},{"id":"b_0267","category":"Plant Stimulant Products","name":"Nutromin","ai":"Herbal Liquid Fertilizer","pack":"1 LTR (HDPE Bottle)","price":290.0,"unitPrice":290.0,"priceIncl":342.2,"gst":"5%","updated":false},{"id":"b_0268","category":"Plant Stimulant Products","name":"Nutromin","ai":"Herbal Liquid Fertilizer","pack":"500 ML","price":310.0,"unitPrice":155.0,"priceIncl":365.8,"gst":"5%","updated":false},{"id":"b_0269","category":"Plant Stimulant Products","name":"Nutromin","ai":"Herbal Liquid Fertilizer","pack":"250 ML","price":325.0,"unitPrice":81.25,"priceIncl":383.5,"gst":"5%","updated":false},{"id":"b_0270","category":"Plant Stimulant Products","name":"Nutromin","ai":"Herbal Liquid Fertilizer","pack":"100 ML","price":380.0,"unitPrice":38.0,"priceIncl":448.4,"gst":"5%","updated":false},{"id":"b_0271","category":"Plant Stimulant Products","name":"Metro Zyme","ai":"Sea Weed Extract Granules","pack":"10 KG Bucket","price":36.0,"unitPrice":36.0,"priceIncl":42.48,"gst":"5%","updated":false},{"id":"b_0272","category":"Plant Stimulant Products","name":"Sardar Gold","ai":"Sea Weed Extract Granules","pack":"10 KG Bucket","price":36.0,"unitPrice":36.0,"priceIncl":42.48,"gst":"5%","updated":false},{"id":"b_0273","category":"Plant Stimulant Products","name":"Magic-555","ai":"Plant Growth Promoter","pack":"2 ML","price":25.45,"unitPrice":25.45,"priceIncl":30.03,"gst":"18%","updated":false},{"id":"b_0274","category":"Herbicides / Weedicides","name":"Safaya","ai":"TPT rate 5% extra","pack":"5 KG","price":25.5,"unitPrice":null,"priceIncl":30.09,"gst":null,"updated":true}];
+
+const boardEl = document.getElementById('board');
+const searchEl = document.getElementById('search');
+const lockBtn = document.getElementById('lockBtn');
+const adminBanner = document.getElementById('adminBanner');
+const addFab = document.getElementById('addFab');
+const syncText = document.getElementById('syncText');
+const countText = document.getElementById('countText');
+const toastEl = document.getElementById('toast');
+const modalRoot = document.getElementById('modalRoot');
+const newProductSlot = document.getElementById('newProductSlot');
+
+let products = [];
+let lastUpdated = null;
+let isAdmin = false;
+let editingId = null;
+let addingNew = false;
+let query = '';
+let openCategories = new Set();
+let polling = null;
+const CATEGORY_ORDER = ["Insecticides","Herbicides / Weedicides","Fungicides","Plant Stimulant Products"];
+
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(()=>toastEl.classList.remove('show'), 2200);
+}
+
+function relTime(ts){
+  if(!ts) return 'never';
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s < 10) return 'just now';
+  if(s < 60) return s+'s ago';
+  const m = Math.floor(s/60);
+  if(m < 60) return m+'m ago';
+  const h = Math.floor(m/60);
+  if(h < 24) return h+'h ago';
+  return Math.floor(h/24)+'d ago';
+}
+
+const DB_URL = 'https://agrichem-price-list-default-rtdb.firebaseio.com/';
+
+async function dbGet(key){
+  const r = await fetch(DB_URL + key + '.json?t=' + Date.now(), {cache:'no-store'});
+  if(!r.ok) throw new Error('db read failed');
+  return r.json(); // null if key doesn't exist yet
+}
+async function dbSet(key, val){
+  const r = await fetch(DB_URL + key + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(val)});
+  if(!r.ok) throw new Error('db write failed');
+}
+
+async function loadCatalog(silent){
+  try{
+    const SEED_VERSION = 3;
+    const parsed = await dbGet('catalogBihar');
+    if(parsed && (parsed.seedVersion || 1) >= SEED_VERSION && parsed.products && parsed.products.length){
+      products = parsed.products;
+      lastUpdated = parsed.lastUpdated || null;
+    } else {
+      // first run: seed the database with the official price list
+      products = RAW_SEED;
+      lastUpdated = Date.now();
+      await dbSet('catalogBihar', {products, lastUpdated, seedVersion: SEED_VERSION});
+    }
+    syncText.textContent = 'updated ' + relTime(lastUpdated);
+  } catch(e){
+    if(products.length === 0){ products = RAW_SEED; }
+    if(!silent) syncText.textContent = 'offline — check internet';
+  }
+  render();
+}
+
+async function saveCatalog(){
+  lastUpdated = Date.now();
+  try{
+    await dbSet('catalogBihar', {products, lastUpdated, seedVersion: 3});
+    syncText.textContent = 'updated ' + relTime(lastUpdated);
+  } catch(e){
+    showToast('Could not save — check internet and try again');
+  }
+}
+
+function genId(){
+  return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML;
+}
+
+function formatPrice(v){
+  const n = Number(v);
+  if(Number.isNaN(n)) return v;
+  return n.toLocaleString('en-IN', {maximumFractionDigits:2});
+}
+
+function matchesQuery(p, q){
+  if(!q) return true;
+  const hay = (p.name+' '+(p.ai||'')+' '+p.pack+' '+p.category).toLowerCase();
+  return hay.includes(q.toLowerCase());
+}
+
+function render(){
+  addFab.style.display = isAdmin ? 'flex' : 'none';
+  adminBanner.style.display = isAdmin ? 'flex' : 'none';
+  lockBtn.textContent = isAdmin ? '🔓' : '🔒';
+  lockBtn.classList.toggle('unlocked', isAdmin);
+
+  const filtered = products.filter(p => matchesQuery(p, query));
+  countText.textContent = filtered.length + ' item' + (filtered.length===1?'':'s') + (query ? ' matching' : ' total');
+
+  // group by category, preserving known order then any extras
+  const byCat = {};
+  filtered.forEach(p => {
+    const c = p.category || 'Other';
+    if(!byCat[c]) byCat[c] = [];
+    byCat[c].push(p);
+  });
+  const cats = Object.keys(byCat).sort((a,b)=>{
+    const ia = CATEGORY_ORDER.indexOf(a), ib = CATEGORY_ORDER.indexOf(b);
+    if(ia === -1 && ib === -1) return a.localeCompare(b);
+    if(ia === -1) return 1;
+    if(ib === -1) return -1;
+    return ia - ib;
+  });
+
+  // auto-open categories while searching
+  if(query){ cats.forEach(c => openCategories.add(c)); }
+
+  boardEl.innerHTML = '';
+
+  if(cats.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    if(products.length === 0){
+      empty.innerHTML = `<div class="big">📋</div><p>${isAdmin ? 'No products yet. Tap "+ Add product" below to list the first rate.' : 'No products on the board yet. Ask the boss to add rates.'}</p>`;
+    } else {
+      empty.innerHTML = `<div class="big">🔍</div><p>No product matches "${escapeHtml(query)}".</p>`;
+    }
+    boardEl.appendChild(empty);
+    return;
+  }
+
+  cats.forEach(cat => {
+    const catEl = document.createElement('div');
+    catEl.className = 'category';
+    const isOpen = openCategories.has(cat);
+    const header = document.createElement('div');
+    header.className = 'cat-header' + (isOpen ? ' open' : '');
+    header.innerHTML = `<span class="cat-title">${escapeHtml(cat)}<span class="cat-count">${byCat[cat].length}</span></span><span class="cat-chevron">▸</span>`;
+    header.onclick = () => {
+      if(openCategories.has(cat)) openCategories.delete(cat); else openCategories.add(cat);
+      render();
+    };
+    catEl.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'cat-body' + (isOpen ? ' open' : '');
+    byCat[cat].forEach(p => {
+      if(editingId === p.id){
+        body.appendChild(renderEditRow(p, cat));
+      } else {
+        body.appendChild(renderRow(p));
+      }
+    });
+    catEl.appendChild(body);
+    boardEl.appendChild(catEl);
+  });
+
+  // new product form
+  newProductSlot.innerHTML = '';
+  newProductSlot.style.display = 'none';
+  if(addingNew){
+    newProductSlot.style.display = 'block';
+    const wrap = document.createElement('div');
+    wrap.appendChild(renderEditRow({id:'__new__', name:'', ai:'', pack:'', price:'', priceIncl:'', gst:'', category: CATEGORY_ORDER[0]}, null, true));
+    newProductSlot.appendChild(wrap);
+  }
+}
+
+function renderRow(p){
+  const row = document.createElement('div');
+  row.className = 'row';
+  const gstLabel = p.gst ? p.gst + ' GST' : '+ GST';
+  const subBits = [];
+  if(p.unitPrice != null && p.unitPrice !== '') subBits.push('pack ₹' + formatPrice(p.unitPrice));
+  if(p.priceIncl) subBits.push('₹' + formatPrice(p.priceIncl) + ' incl.');
+  row.innerHTML = `
+    <div class="row-main">
+      <div class="p-name">${escapeHtml(p.name)}${p.updated ? '<span class="badge-updated">updated</span>' : ''}</div>
+      ${p.ai ? `<div class="p-ai">${escapeHtml(p.ai)}</div>` : ''}
+      <div class="p-pack">${escapeHtml(p.pack)}</div>
+    </div>
+    <div class="p-price-block">
+      <div class="p-price">₹${formatPrice(p.price)}</div>
+      <div class="p-price-sub">per LTR/KG ${gstLabel}</div>
+      ${subBits.length ? `<div class="p-price-sub">${subBits.join(' &middot; ')}</div>` : ''}
+    </div>
+  `;
+  if(isAdmin){
+    const actions = document.createElement('div');
+    actions.className = 'row-actions';
+    actions.innerHTML = `
+      <button class="icon-btn edit-btn">✏️</button>
+      <button class="icon-btn danger del-btn">🗑️</button>
+    `;
+    actions.querySelector('.edit-btn').onclick = () => { editingId = p.id; addingNew = false; render(); };
+    actions.querySelector('.del-btn').onclick = () => confirmDelete(p);
+    row.appendChild(actions);
+  }
+  return row;
+}
+
+function renderEditRow(p, catHint, isNew){
+  const row = document.createElement('div');
+  row.className = 'edit-row' + (isNew ? ' new' : '');
+  const categories = Array.from(new Set([...CATEGORY_ORDER, ...products.map(x=>x.category)]));
+  const catOptions = categories.map(c => `<option value="${escapeHtml(c)}" ${c === (p.category||catHint) ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+  row.innerHTML = `
+    <div class="field-wrap">
+      <p class="field-label">Category</p>
+      <select class="field" id="f-cat">${catOptions}</select>
+    </div>
+    <div class="field-wrap">
+      <p class="field-label">Product name</p>
+      <input class="field" id="f-name" placeholder="e.g. Chief" value="${escapeHtml(p.name)}">
+    </div>
+    <div class="field-wrap">
+      <p class="field-label">Active ingredient (optional)</p>
+      <input class="field" id="f-ai" placeholder="e.g. Chlorpyriphos 50% + Cypermethrin 5% EC" value="${escapeHtml(p.ai||'')}">
+    </div>
+    <div class="field-wrap">
+      <p class="field-label">Pack size</p>
+      <input class="field" id="f-pack" placeholder="e.g. 1 LTR (PET)" value="${escapeHtml(p.pack)}">
+    </div>
+    <div class="two-col field-wrap">
+      <div>
+        <p class="field-label">Rate/LTR-KG ₹ (excl. GST)</p>
+        <input class="field" id="f-price" type="number" inputmode="decimal" value="${p.price}">
+      </div>
+      <div>
+        <p class="field-label">Pack price ₹ (optional)</p>
+        <input class="field" id="f-unit" type="number" inputmode="decimal" value="${p.unitPrice != null ? p.unitPrice : ''}">
+      </div>
+    </div>
+    <div class="two-col field-wrap">
+      <div>
+        <p class="field-label">GST rate</p>
+        <input class="field" id="f-gst" placeholder="e.g. 18%" value="${escapeHtml(p.gst||'')}">
+      </div>
+      <div></div>
+    </div>
+    <div class="edit-actions">
+      <button class="btn btn-save" id="saveBtn">${isNew ? 'Add product' : 'Save'}</button>
+      <button class="btn btn-cancel" id="cancelBtn">Cancel</button>
+    </div>
+  `;
+  row.querySelector('#saveBtn').onclick = async () => {
+    const category = row.querySelector('#f-cat').value;
+    const name = row.querySelector('#f-name').value.trim();
+    const ai = row.querySelector('#f-ai').value.trim();
+    const pack = row.querySelector('#f-pack').value.trim();
+    const price = row.querySelector('#f-price').value.trim();
+    const unitP = row.querySelector('#f-unit').value.trim();
+    const gst = row.querySelector('#f-gst').value.trim();
+    if(!name || !pack || price === '' || Number.isNaN(Number(price))){
+      showToast('Enter a product name, pack size, and valid rate');
+      return;
+    }
+    const gstMult = gst === '5%' ? 1.05 : 1.18;
+    const incl = Math.round(Number(price) * gstMult * 100) / 100;
+    const unitVal = (unitP !== '' && !Number.isNaN(Number(unitP))) ? Number(unitP) : null;
+    if(isNew){
+      products.unshift({id: genId(), category, name, ai, pack, price: Number(price), unitPrice: unitVal, priceIncl: incl, gst: gst||null, updated:true});
+      addingNew = false;
+      await saveCatalog();
+      showToast('Product added');
+    } else {
+      const idx = products.findIndex(x => x.id === p.id);
+      if(idx > -1){
+        const changed = products[idx].price !== Number(price);
+        products[idx] = {...products[idx], category, name, ai, pack, price: Number(price), unitPrice: unitVal, priceIncl: incl, gst: gst||null, updated: changed ? true : products[idx].updated};
+      }
+      editingId = null;
+      await saveCatalog();
+      showToast('Rate saved');
+    }
+    render();
+  };
+  row.querySelector('#cancelBtn').onclick = () => {
+    if(isNew){ addingNew = false; } else { editingId = null; }
+    render();
+  };
+  return row;
+}
+
+function confirmDelete(p){
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h2>Remove product?</h2>
+        <p>"${escapeHtml(p.name)} — ${escapeHtml(p.pack)}" will be removed from the board for everyone.</p>
+        <div class="modal-actions">
+          <button class="btn btn-cancel" id="delCancel">Cancel</button>
+          <button class="btn" style="background:var(--brick); color:#fff" id="delConfirm">Remove</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('delCancel').onclick = () => modalRoot.innerHTML = '';
+  document.getElementById('delConfirm').onclick = async () => {
+    products = products.filter(x => x.id !== p.id);
+    modalRoot.innerHTML = '';
+    await saveCatalog();
+    showToast('Product removed');
+    render();
+  };
+}
+
+addFab.onclick = () => { addingNew = true; editingId = null; render(); window.scrollTo({top:0, behavior:'smooth'}); };
+
+searchEl.oninput = (e) => { query = e.target.value; render(); };
+
+// --- Boss mode / PIN ---
+async function getPin(){
+  try{ return await dbGet('adminPin'); } catch(e){ return null; }
+}
+async function setPin(pin){
+  await dbSet('adminPin', pin);
+}
+
+lockBtn.onclick = async () => {
+  if(isAdmin){ exitAdminMode(); return; }
+  const existingPin = await getPin();
+  showPinModal(!existingPin);
+};
+document.getElementById('exitAdmin').onclick = exitAdminMode;
+
+function exitAdminMode(){
+  isAdmin = false;
+  editingId = null;
+  addingNew = false;
+  render();
+}
+
+function showPinModal(isSetup){
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <h2>${isSetup ? 'Set a boss PIN' : 'Enter boss PIN'}</h2>
+        <p>${isSetup ? 'This PIN unlocks editing for whoever knows it. Share it only with the boss / whoever sets prices.' : 'Enter the PIN to unlock editing.'}</p>
+        <div class="modal-error" id="pinError" style="display:none">Incorrect PIN</div>
+        <input class="pin-input" id="pinField" type="password" inputmode="numeric" maxlength="8" placeholder="••••">
+        <div class="modal-actions">
+          <button class="btn btn-cancel" id="pinCancel">Cancel</button>
+          <button class="btn btn-save" id="pinSubmit">${isSetup ? 'Set PIN' : 'Unlock'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const field = document.getElementById('pinField');
+  field.focus();
+  document.getElementById('pinCancel').onclick = () => modalRoot.innerHTML = '';
+  document.getElementById('pinSubmit').onclick = async () => {
+    const val = field.value.trim();
+    if(val.length < 4){
+      document.getElementById('pinError').textContent = 'PIN must be at least 4 digits';
+      document.getElementById('pinError').style.display = 'block';
+      return;
+    }
+    if(isSetup){
+      await setPin(val);
+      isAdmin = true;
+      modalRoot.innerHTML = '';
+      render();
+      showToast('Boss PIN set — editing unlocked');
+    } else {
+      const real = await getPin();
+      if(val === real){
+        isAdmin = true;
+        modalRoot.innerHTML = '';
+        render();
+        showToast('Editing unlocked');
+      } else {
+        document.getElementById('pinError').style.display = 'block';
+        field.value = '';
+        field.focus();
+      }
+    }
+  };
+  field.onkeydown = (e) => { if(e.key === 'Enter') document.getElementById('pinSubmit').click(); };
+}
+
+function startPolling(){
+  if(polling) clearInterval(polling);
+  polling = setInterval(() => {
+    if(editingId === null && !addingNew){
+      loadCatalog(true);
+    }
+  }, 7000);
+}
+
+(async function init(){
+  await loadCatalog();
+  startPolling();
+  setInterval(() => { if(lastUpdated) syncText.textContent = 'updated ' + relTime(lastUpdated); }, 15000);
+})();
+</script>
+</body>
+</html>
