@@ -489,6 +489,109 @@ async function saveCatalog(){
   }
 }
 
+function packFraction(pack){
+  if(!pack) return null;
+  // find the first number + unit in the pack string, e.g. "500 ML", "250 GM", "1 LTR (PET)"
+  const m = pack.match(/([\d.]+)\s*(ML|GM|LTR|LITRE|KG|L\b)/i);
+  if(!m) return null;
+  const qty = parseFloat(m[1]);
+  if(Number.isNaN(qty)) return null;
+  const unit = m[2].toUpperCase();
+  if(unit === 'ML' || unit === 'GM') return qty / 1000;   // 500 ML -> 0.5
+  return qty;                                            // 1 LTR / 1 KG -> 1, 10 KG -> 10
+}
+
+function computePackPrice(rate, pack){
+  const f = packFraction(pack);
+  if(f === null) return null;
+  return Math.round(rate * f * 100) / 100;
+}
+
+// Official packing-difference table (rupees added to the 1 LTR/KG rate)
+const PACK_DIFF = {
+  'PET':   {0.5:15, 0.25:35, 0.1:80, 0.05:160, 5:-5},
+  'ALM':   {0.5:20, 0.25:40, 0.1:95, 0.05:190, 5:-5},
+  'HDPE':  {0.5:20, 0.25:35, 0.1:90, 0.05:170, 5:-5},
+  'POUCH': {0.5:15, 0.25:30, 0.1:50, 0.05:110, 5:0},
+  'BOX':   {0.5:15, 0.25:35, 0.1:90, 0.05:160, 5:0}
+};
+const PACK_TYPE_LABEL = {PET:'PET bottle', ALM:'ALM bottle / TIN', HDPE:'HDPE bottle', POUCH:'Pouch', BOX:'Box / Carton'};
+
+function detectPackType(prod){
+  // look at every pack string of this product for a packaging keyword
+  const packs = products.filter(x => x.name === prod.name && x.category === prod.category).map(x => x.pack.toUpperCase());
+  const all = packs.join(' ');
+  if(all.includes('PET')) return 'PET';
+  if(all.includes('ALM') || all.includes('TIN')) return 'ALM';
+  if(all.includes('HDPE')) return 'HDPE';
+  if(all.includes('POUCH') || all.includes('BAG')) return 'POUCH';
+  if(all.includes('BOX') || all.includes('CTN') || all.includes('CARTON') || all.includes('DUPLEX') || all.includes('BKT') || all.includes('BUCKET') || all.includes('DRUM') || all.includes('JAR') || all.includes('CONT')) return 'BOX';
+  return 'PET';
+}
+
+// which sibling packs would change if the base rate becomes baseRate
+function cascadeTargets(prod, baseRate, type){
+  const diffs = PACK_DIFF[type] || PACK_DIFF['PET'];
+  const out = [];
+  products.forEach(x => {
+    if(x.name !== prod.name || x.category !== prod.category || x.id === prod.id) return;
+    const f = packFraction(x.pack);
+    if(f === null) return;
+    const key = [0.5,0.25,0.1,0.05,5].find(k => Math.abs(k - f) < 1e-9);
+    if(key === undefined) return;   // sizes not in the table (10ML, 25GM etc.) are left alone
+    const newRate = Math.round((baseRate + diffs[key]) * 100) / 100;
+    if(newRate !== x.price) out.push({row:x, newRate:newRate, diff:diffs[key]});
+  });
+  return out;
+}
+
+function applyCascade(targets, gstStr){
+  const mult = gstStr === '5%' ? 1.05 : 1.18;
+  targets.forEach(t => {
+    t.row.price = t.newRate;
+    const u = computePackPrice(t.newRate, t.row.pack);
+    if(u != null) t.row.unitPrice = u;
+    t.row.priceIncl = Math.round(t.newRate * mult * 100) / 100;
+    t.row.updated = true;
+  });
+}
+
+function showCascadeModal(prod, baseRate, gstStr, afterFn){
+  let type = detectPackType(prod);
+  function draw(){
+    const targets = cascadeTargets(prod, baseRate, type);
+    const typeOpts = Object.keys(PACK_DIFF).map(t => `<option value="${t}" ${t===type?'selected':''}>${PACK_TYPE_LABEL[t]}</option>`).join('');
+    const listHtml = targets.length ? targets.map(t =>
+        `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--board-line); font-size:12.5px;">
+           <span style="color:var(--chalk-dim); font-family:'JetBrains Mono',monospace;">${escapeHtml(t.row.pack)}</span>
+           <span><span style="color:var(--chalk-dim);">+${t.diff} →</span> <b style="color:var(--chalk-amber);">₹${formatPrice(t.newRate)}</b></span>
+         </div>`).join('')
+      : `<p style="color:var(--chalk-dim); font-size:12.5px; margin:6px 0;">No other pack sizes to update for this product.</p>`;
+    modalRoot.innerHTML = `
+      <div class="modal-backdrop">
+        <div class="modal" style="max-width:340px; text-align:left;">
+          <h2>Update other pack sizes?</h2>
+          <p style="margin-bottom:12px;">${escapeHtml(prod.name)} base rate is now <b style="color:var(--chalk-amber)">₹${formatPrice(baseRate)}</b>. Smaller packs can be set automatically using the packing difference.</p>
+          <p class="field-label">Packing type</p>
+          <select class="field" id="cascType" style="margin-bottom:10px;">${typeOpts}</select>
+          <div style="max-height:190px; overflow-y:auto; margin-bottom:14px;">${listHtml}</div>
+          <div class="modal-actions">
+            <button class="btn btn-cancel" id="cascSkip">Only this pack</button>
+            <button class="btn btn-save" id="cascGo" ${targets.length?'':'disabled'}>Update all</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('cascType').onchange = (e) => { type = e.target.value; draw(); };
+    document.getElementById('cascSkip').onclick = () => { modalRoot.innerHTML=''; afterFn(false); };
+    document.getElementById('cascGo').onclick = async () => {
+      applyCascade(cascadeTargets(prod, baseRate, type), gstStr);
+      modalRoot.innerHTML='';
+      afterFn(true);
+    };
+  }
+  draw();
+}
+
 function genId(){
   return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 }
@@ -650,8 +753,8 @@ function renderEditRow(p, catHint, isNew){
         <input class="field" id="f-price" type="number" inputmode="decimal" value="${p.price}">
       </div>
       <div>
-        <p class="field-label">Pack price ₹ (optional)</p>
-        <input class="field" id="f-unit" type="number" inputmode="decimal" value="${p.unitPrice != null ? p.unitPrice : ''}">
+        <p class="field-label">Pack price (auto)</p>
+        <div class="field" id="f-unit-view" style="display:flex; align-items:center; color:var(--chalk-amber); font-family:'Oswald',sans-serif; font-size:16px;">—</div>
       </div>
     </div>
     <div class="two-col field-wrap">
@@ -666,13 +769,24 @@ function renderEditRow(p, catHint, isNew){
       <button class="btn btn-cancel" id="cancelBtn">Cancel</button>
     </div>
   `;
+  const priceField = row.querySelector('#f-price');
+  const packField = row.querySelector('#f-pack');
+  const unitView = row.querySelector('#f-unit-view');
+  function refreshUnit(){
+    const r = Number(priceField.value);
+    const calc = (priceField.value !== '' && !Number.isNaN(r)) ? computePackPrice(r, packField.value) : null;
+    unitView.textContent = calc == null ? '—' : '₹' + formatPrice(calc);
+  }
+  priceField.addEventListener('input', refreshUnit);
+  packField.addEventListener('input', refreshUnit);
+  refreshUnit();
+
   row.querySelector('#saveBtn').onclick = async () => {
     const category = row.querySelector('#f-cat').value;
     const name = row.querySelector('#f-name').value.trim();
     const ai = row.querySelector('#f-ai').value.trim();
     const pack = row.querySelector('#f-pack').value.trim();
     const price = row.querySelector('#f-price').value.trim();
-    const unitP = row.querySelector('#f-unit').value.trim();
     const gst = row.querySelector('#f-gst').value.trim();
     if(!name || !pack || price === '' || Number.isNaN(Number(price))){
       showToast('Enter a product name, pack size, and valid rate');
@@ -680,7 +794,8 @@ function renderEditRow(p, catHint, isNew){
     }
     const gstMult = gst === '5%' ? 1.05 : 1.18;
     const incl = Math.round(Number(price) * gstMult * 100) / 100;
-    const unitVal = (unitP !== '' && !Number.isNaN(Number(unitP))) ? Number(unitP) : null;
+    const autoUnit = computePackPrice(Number(price), pack);
+    const unitVal = autoUnit != null ? autoUnit : (p.unitPrice != null ? p.unitPrice : null);
     if(isNew){
       products.unshift({id: genId(), category, name, ai, pack, price: Number(price), unitPrice: unitVal, priceIncl: incl, gst: gst||null, updated:true});
       addingNew = false;
@@ -688,11 +803,24 @@ function renderEditRow(p, catHint, isNew){
       showToast('Product added');
     } else {
       const idx = products.findIndex(x => x.id === p.id);
+      let saved = null;
       if(idx > -1){
         const changed = products[idx].price !== Number(price);
         products[idx] = {...products[idx], category, name, ai, pack, price: Number(price), unitPrice: unitVal, priceIncl: incl, gst: gst||null, updated: changed ? true : products[idx].updated};
+        saved = products[idx];
       }
       editingId = null;
+      const isBase = packFraction(pack) === 1;
+      const hasSiblings = saved && cascadeTargets(saved, Number(price), detectPackType(saved)).length > 0;
+      if(isBase && hasSiblings){
+        render();
+        showCascadeModal(saved, Number(price), gst, async (didAll) => {
+          await saveCatalog();
+          showToast(didAll ? 'All pack sizes updated' : 'Rate saved');
+          render();
+        });
+        return;
+      }
       await saveCatalog();
       showToast('Rate saved');
     }
